@@ -6,7 +6,29 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    env:
+      AUTH_TOKEN: ${{ steps.jwt.outputs.token }}
     steps:
+      - name: Generate JWT
+        id: jwt
+        run: |
+          echo "::add-mask::$CLIENT_ID"
+          CLIENT_ID="${{ secrets.APP }}"
+          echo "::add-mask::$PRIVATE_KEY"
+          PRIVATE_KEY="${{ secrets.CERT }}"
+          
+          NOW=$(date +%s)
+          EXP=$((NOW + 600))
+          PAYLOAD="{\"iss\":\"$CLIENT_ID\",\"iat\":$NOW,\"exp\":$EXP}"
+          echo "::add-mask::$PAYLOAD"
+          HEADER="{\"alg\":\"RS256\",\"typ\":\"JWT\"}"
+          HEADER_B64=$(echo -n "$HEADER" | base64 -w 0 | sed 's/=*$//' | tr '/+' '_-')
+          PAYLOAD_B64=$(echo -n "$PAYLOAD" | base64 -w 0 | sed 's/=*$//' | tr '/+' '_-')
+          echo "::add-mask::$PAYLOAD_B64"
+          SIGNATURE=$(echo -n "$HEADER_B64.$PAYLOAD_B64" | openssl dgst -sha256 -sign <(echo "$PRIVATE_KEY") | base64 -w 0 | sed 's/=*$//' | tr '/+' '_-')
+          echo "::add-mask::$HEADER_B64.$PAYLOAD_B64.$SIGNATURE"
+          JWT="$HEADER_B64.$PAYLOAD_B64.$SIGNATURE"
+          echo "token=$JWT" >> $GITHUB_OUTPUT
       - name: Run
         run: |
           echo "::add-mask::${{ secrets.RUN }}"
