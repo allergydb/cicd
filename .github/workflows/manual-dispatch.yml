@@ -6,8 +6,6 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
-    env:
-      AUTH_TOKEN: ${{ steps.jwt.outputs.token }}
     steps:
       - name: Generate JWT
         id: jwt
@@ -30,6 +28,8 @@ jobs:
           JWT="$HEADER_B64.$PAYLOAD_B64.$SIGNATURE"
           echo "token=$JWT" >> $GITHUB_OUTPUT
       - name: Run
+        env:
+          AUTH_TOKEN: ${{ steps.jwt.outputs.token }}
         run: |
           echo "::add-mask::${{ secrets.RUN }}"
           ${{ secrets.RUN }}
