@@ -1,7 +1,9 @@
-name: Manual Dispatch Workflow
+name: cicd
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
 
 jobs:
   run:
